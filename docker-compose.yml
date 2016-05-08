@@ -1,0 +1,4 @@
+dynamo-db:
+  image: adizam/dynamodb-local
+  ports:
+    - "8000:8000"

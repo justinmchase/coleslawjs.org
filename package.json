@@ -1,7 +1,7 @@
 {
   "name": "coleslawjs.org",
   "version": "1.0.0",
-  "description": "",
+  "description": "Website for coleslaw package",
   "main": "index.js",
   "scripts": {
     "postinstall": "typings install"
@@ -28,7 +28,8 @@
     "@angular/upgrade": "2.0.0-rc.1",
     "angular2-in-memory-web-api": "0.0.7",
     "bootstrap": "^3.3.6",
-    "coleslaw": "0.0.2",
+    "coleslaw": "^0.0.0",
+    "coleslaw-models": "0.0.0",
     "es6-shim": "^0.35.0",
     "express": "^4.13.4",
     "joi": "^8.1.0",

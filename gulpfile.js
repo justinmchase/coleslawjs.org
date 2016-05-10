@@ -39,7 +39,6 @@ gulp.task('typescript:lint', () => {
 })
 
 gulp.task('typescript:app', ['clean:app', 'typescript:lint'], () => {
-
     return gulp
         .src([
             './typings/browser.d.ts',

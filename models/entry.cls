@@ -1,5 +1,6 @@
 model Entry {
-    field eid: string
+    field auto id eid: string
+    
     validate eid: uuid
 }
 

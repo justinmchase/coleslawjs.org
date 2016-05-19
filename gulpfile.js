@@ -67,6 +67,7 @@ gulp.task('build', ['build:server', 'build:app', 'coleslaw', 'resources'])
 /* RESOURCES */
 gulp.task('dependencies', () => {
   var dependencies = {
+    'coleslaw-angular/**/*.js': 'coleslaw-angular',
     '@angular/**/*.js': '@angular',
     'bootstrap/dist/js/bootstrap.min.js': 'bootstrap',
     'rxjs/**/*.js': 'rxjs',

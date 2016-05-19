@@ -9,6 +9,7 @@ var gls = require('gulp-live-server')
 var runSequence = require('run-sequence')
 var es = require('event-stream')
 var coleslaw = require('gulp-coleslaw')
+var uglify = require('gulp-uglify')
 
 /* MODELS */
 gulp.task('coleslaw', () => {
@@ -44,6 +45,7 @@ gulp.task('build:app', () => {
         'transform-flow-strip-types'
       ]
     }))
+    .pipe(uglify())
     .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('build/app'))
 })
@@ -55,6 +57,7 @@ gulp.task('build:server', () => {
     .pipe(babel({
       presets: ['es2015']
     }))
+    .pipe(uglify())
     .pipe(sourcemaps.write('.'))
     .pipe(gulp.dest('build/server'))
 })
@@ -75,7 +78,9 @@ gulp.task('dependencies', () => {
 
   var streams = Object
     .keys(dependencies)
-    .map(key => gulp.src(`node_modules/${key}`).pipe(gulp.dest(`build/app/d/${dependencies[key]}`)))
+    .map(key => gulp
+      .src(`node_modules/${key}`)
+      .pipe(gulp.dest(`build/app/d/${dependencies[key]}`)))
 
   return es.merge(streams)
 })
@@ -136,13 +141,13 @@ gulp.task('serve', () => {
 })
 
 gulp.task('watch', (done) => {
-  gulp.watch('gulpfile.js', gulp.seq)
+  gulp.watch(['gulpfile.js'], gulp.seq)
   gulp.watch(['models/**/*.cls'], ['coleslaw', 'serve', 'test:server'])
   gulp.watch(['server/**/*.js'], ['build:server', 'serve', 'lint', 'test:server'])
   gulp.watch(['app/**/*.js'], ['build:app', 'lint', 'test:app'])
-  gulp.watch('app/**/*.less', ['styles'])
-  gulp.watch('app/**/*.html', ['templates'])
-  gulp.watch('app/images/**/*', ['images'])
+  gulp.watch(['app/**/*.less'], ['styles'])
+  gulp.watch(['app/**/*.html'], ['templates'])
+  gulp.watch(['app/images/**/*'], ['images'])
   runSequence('clean', 'build', 'test', 'lint', 'serve', done)
 })
 

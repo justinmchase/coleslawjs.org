@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "description": "Website for coleslaw package",
   "main": "index.js",
-  "scripts": {
-  },
+  "scripts": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/justinmchase/coleslawjs.org.git"
@@ -29,9 +28,9 @@
     "bootstrap": "^3.3.6",
     "coleslaw": "^0.0.0",
     "coleslaw-angular": "0.0.0",
-    "coleslaw-dynamo": "0.0.0",
-    "coleslaw-express": "0.0.0",
-    "coleslaw-models": "0.0.0",
+    "coleslaw-dynamo": "0.0.1",
+    "coleslaw-express": "0.0.1",
+    "coleslaw-models": "0.0.1",
     "es6-shim": "^0.35.0",
     "express": "^4.13.4",
     "joi": "^8.1.0",
@@ -63,6 +62,7 @@
     "gulp-less": "^3.1.0",
     "gulp-live-server": "0.0.29",
     "gulp-sourcemaps": "^1.6.0",
+    "gulp-uglify": "^1.5.3",
     "gulp-util": "^3.0.7",
     "run-sequence": "^1.1.5"
   }

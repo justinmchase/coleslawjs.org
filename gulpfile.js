@@ -1,231 +1,152 @@
 var gulp = require('gulp')
-var del = require('del')
-var path = require('path')
-var gutil = require('gulp-util')
-var gls = require('gulp-live-server')
+var babel = require('gulp-babel')
+var eslint = require('gulp-eslint')
 var less = require('gulp-less')
+var gutil = require('gulp-util')
+var del = require('del')
 var sourcemaps = require('gulp-sourcemaps')
-var typescript = require('typescript')
-var ts = require('gulp-typescript')
-var tslint = require('gulp-tslint')
-var coleslaw = require('gulp-coleslaw')
+var gls = require('gulp-live-server')
 var runSequence = require('run-sequence')
+var es = require('event-stream')
+var coleslaw = require('gulp-coleslaw')
 
-// --
-// Coleslaw tasks
-// --
+/* MODELS */
 gulp.task('coleslaw', () => {
-    return gulp
-        .src([
-            './models/**/*.cls'
-        ])
-        .pipe(coleslaw())
-        .pipe(gulp.dest('./build/models'))
-        .pipe(gulp.dest('./public/app/models'))
+  return gulp
+    .src('models/**/*.cls')
+    .pipe(coleslaw())
+    .pipe(gulp.dest('build/app/models'))
+    .pipe(gulp.dest('build/server/models'))
 })
 
-// --
-// TypeScript tasks
-// --
-gulp.task('typescript:lint', () => {
-    return gulp.src([
-            './app/**/*.ts',
-            './server/**/*.ts'
-        ])
-        .pipe(tslint())
-        .pipe(tslint.report('full', {
-            summarizeFailureOutput: true
-        }))
+/* TEST */
+gulp.task('test:server', ['build:server'], () => {
+  // todo...
 })
 
-gulp.task('typescript:app', ['clean:app', 'typescript:lint'], () => {
-    return gulp
-        .src([
-            './typings/browser.d.ts',
-            './app/**/*.ts'
-        ])
-        .pipe(sourcemaps.init())
-        .pipe(ts({
-            target: 'es5',
-            module: 'system',
-            moduleResolution: 'node',
-            emitDecoratorMetadata: true,
-            experimentalDecorators: true,
-            removeComments: true,
-            noImplicitAny: false,
-            typescript: typescript
-        }))
-        .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('./public/app'))
+gulp.task('test:app', ['build:app'], () => {
+  // todo...
 })
 
-gulp.task('typescript:server', ['typescript:lint'], (done) => {
-    return gulp
-        .src([
-            'typings/main.d.ts',
-            'server/**/*.ts',
-        ])
-        .pipe(sourcemaps.init())
-        .pipe(ts({
-            module: 'commonjs',
-            moduleResolution: 'node',
-            emitDecoratorMetadata: true,
-            experimentalDecorators: true,
-            removeComments: true,
-            noImplicitAny: false,
-            typescript: typescript
-        }))
-        .pipe(sourcemaps.write('.'))
-        .pipe(gulp.dest('build'))
+gulp.task('test', ['build', 'test:server', 'test:app'])
+
+/* BUILD */
+gulp.task('build:app', () => {
+  return gulp
+    .src('app/**/*.js')
+    .pipe(sourcemaps.init())
+    .pipe(babel({
+      presets: ['es2015'],
+      plugins: [
+        'angular2-annotations',
+        'transform-decorators-legacy',
+        'transform-class-properties',
+        'transform-flow-strip-types'
+      ]
+    }))
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest('build/app'))
 })
 
-gulp.task('typescript', ['typescript:app', 'typescript:server'])
-
-// --
-// Resource tasks
-// --
-gulp.task('styles', ['clean:styles'],  function() {
-    return gulp.src(['./app/**/*.less'])
-        .pipe(less({
-            paths: [
-                '.',
-                './node_modules/bootstrap-less'
-            ]
-        }))
-        .on('error', function(err) {
-            gutil.log(err)
-        })
+gulp.task('build:server', () => {
+  return gulp
+    .src('server/**/*.js')
+    .pipe(sourcemaps.init())
+    .pipe(babel({
+      presets: ['es2015']
+    }))
+    .pipe(sourcemaps.write('.'))
+    .pipe(gulp.dest('build/server'))
 })
 
-gulp.task('templates', ['clean:templates'],  () => {
-    return gulp
-        .src([
-            './app/**/*.html'
-        ])
-        .pipe(gulp.dest('./public'))
+gulp.task('build', ['build:server', 'build:app', 'coleslaw', 'resources'])
+
+/* RESOURCES */
+gulp.task('dependencies', () => {
+  var dependencies = {
+    '@angular/**/*.js': '@angular',
+    'bootstrap/dist/js/bootstrap.min.js': 'bootstrap',
+    'rxjs/**/*.js': 'rxjs',
+    'es6-shim/es6-shim.min.js': '',
+    'zone.js/dist/zone.js': '',
+    'reflect-metadata/Reflect.js': '',
+    'systemjs/dist/system.src.js': ''
+  }
+
+  var streams = Object
+    .keys(dependencies)
+    .map(key => gulp.src(`node_modules/${key}`).pipe(gulp.dest(`build/app/d/${dependencies[key]}`)))
+
+  return es.merge(streams)
 })
 
-gulp.task('images', ['clean:images'], function() {
-    return gulp
-        .src(['./app/images/**/*.*'])
-        .pipe(gulp.dest('./public/images'))
+gulp.task('images', () => {
+  return gulp
+    .src('app/images/**/*')
+    .pipe(gulp.dest('build/app/images'))
 })
 
-gulp.task('fonts', ['clean:fonts'], function() {
-    return gulp
-        .src(['./node_modules/bootstrap-less/fonts/**/*.*'])
-        .pipe(gulp.dest('./public/fonts'))
+gulp.task('templates', () => {
+  return gulp
+    .src(['app/**/*.html'])
+    .pipe(gulp.dest('build/app'))
 })
 
-// --
-// Clean tasks
-// --
-gulp.task('clean', function() {
-    return gulp.start(['clean:build', 'clean:public'])
+gulp.task('styles', () => {
+  return gulp
+    .src('app/**/*.less')
+    .pipe(less({
+      paths: [
+        '.',
+        'node_modules/bootstrap-less'
+      ]
+    }))
+    .on('error', gutil.log)
+    .pipe(gulp.dest('build/app'))
 })
 
-gulp.task('clean:build', function() {
-    return del([
-            './build/*'
-        ])
-        .then(paths => {
-            console.log('Deleted /build files and folders:\n', paths.join('\n'))
-        })
+gulp.task('resources', ['styles', 'templates', 'images', 'dependencies'])
+
+/* LINT */
+gulp.task('lint', () => {
+  var sources = [
+    'gulpfile.js',
+    'server/**/*.js',
+    'app/**/*.js',
+    'migrations/**/*.js'
+  ]
+
+  return gulp
+    .src(sources)
+    .pipe(eslint())
+    .pipe(eslint.format())
+    .pipe(eslint.failAfterError())
 })
 
-gulp.task('clean:public', function() {
-    return del([
-            './public/*',
-            '!./public/pages'
-        ])
-        .then(paths => {
-            console.log('Deleted /public files and folders:\n', paths.join('\n'))
-        })
+/* CLEAN */
+gulp.task('clean', () => {
+  return del('build')
 })
 
-gulp.task('clean:app', function() {
-    return del([
-            './public/app'
-        ])
-        .then(paths => {
-            console.log('Deleted:\n', paths.join('\n'))
-        })
-})
-
-gulp.task('clean:images', function() {
-    return del([
-            './public/images'
-        ])
-        .then(paths => {
-            console.log('Deleted:\n', paths.join('\n'))
-        })
-})
-
-gulp.task('clean:styles', function() {
-    return del([
-            './public/styles'
-        ]).then(paths => {
-            console.log('Deleted:\n', paths.join('\n'))
-        })
-})
-
-gulp.task('clean:fonts', function() {
-    return del([
-            './public/fonts'
-        ]).then(paths => {
-            console.log('Deleted:\n', paths.join('\n'))
-        })
-})
-
-gulp.task('clean:templates', function() {
-    return del([
-            './public/templates'
-        ]).then(paths => {
-            console.log('Deleted:\n', paths.join('\n'))
-        })
-})
-
-gulp.task('resources', (cb) => {
-    runSequence('templates', 'images', 'styles', 'fonts', cb)
-})
-
-// --
-// Build
-// --
-gulp.task('build', ['resources', 'typescript', 'coleslaw'])
-
-// --
-// Server Tasks
-// --
+/* WATCH */
 var server = null
-gulp.task('serve', ['typescript:server'], () => {
-    if (!server) server = gls.new('build/index.js')
-    if (server) server.start()
+gulp.task('serve', () => {
+  if (!server) server = gls.new('build/server/index.js')
+  if (server) server.start()
 })
 
-gulp.task('deleteFiles', ['typescript:server'], () => {
-    return del(files)
-        .then(files => {
-            console.log('Deleted:\n', paths.join('\n'))
-        })
-})
-
-// --
-// Watch Tasks
-// --
 gulp.task('watch', (done) => {
-    gulp.watch('./models/**/*.cls', ['coleslaw'])
-    gulp.watch('./server/**/*.ts', ['serve'])
-    gulp.watch('./app/**/*.less', ['styles'], (file) => {
-        if (server) server.notify(file)
-    })
-    gulp.watch('./app/**/*.html', ['templates'], (file) => {
-        if (server) server.notify(file)
-    })
-    gulp.watch('./app/**/*.ts', ['typescript:app'], (file) => {
-        if (server) server.notify(file)
-    })
-    runSequence('clean', 'build', 'serve', done)
+  gulp.watch('gulpfile.js', gulp.seq)
+  gulp.watch(['models/**/*.cls'], ['coleslaw', 'serve', 'test:server'])
+  gulp.watch(['server/**/*.js'], ['build:server', 'serve', 'lint', 'test:server'])
+  gulp.watch(['app/**/*.js'], ['build:app', 'lint', 'test:app'])
+  gulp.watch('app/**/*.less', ['styles'])
+  gulp.watch('app/**/*.html', ['templates'])
+  gulp.watch('app/images/**/*', ['images'])
+  runSequence('clean', 'build', 'test', 'lint', 'serve', done)
 })
 
-gulp.task('default', ['clean', 'build'])
+/* DEFAULT */
+gulp.task('default', (done) => {
+  runSequence('clean', 'build', 'test', 'lint', done)
+})

@@ -1,4 +1,14 @@
-dynamo-db:
+dashboard-web:
+  image: node:4.4.4-slim
+  ports:
+    - "9600:9600"
+    - "5858:5858"
+    - "35729:35729"
+  working_dir: ${HOME}
+  volumes:
+    - .:${HOME}
+  command: npm run debug
+dashboard-db:
   image: adizam/dynamodb-local
   ports:
     - "8000:8000"
